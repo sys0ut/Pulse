@@ -1,0 +1,16 @@
+plugins {
+    id 'java-library'
+}
+
+dependencies {
+    api project(':common')
+
+    api 'org.springframework:spring-jdbc'
+    api 'org.springframework:spring-context'
+    api 'org.springframework:spring-tx'
+
+    api 'com.zaxxer:HikariCP:5.1.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+}
+

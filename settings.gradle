@@ -1,0 +1,8 @@
+rootProject.name = 'Pulse'
+
+include 'common'
+include 'storage'
+include 'log-ingest'
+include 'metric-ingest'
+include 'query-api'
+include 'partition-manager'
