@@ -1,0 +1,25 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: partition-manager
+  datasource:
+    url: ${PULSE_DB_URL:jdbc:cubrid://localhost:30000/observability:::}
+    username: ${PULSE_DB_USER:dba}
+    password: ${PULSE_DB_PASS:dba}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+
+pulse:
+  partition:
+    enabled: false
+    cron: "0 5 0 * * *"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+
