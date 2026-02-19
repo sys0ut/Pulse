@@ -16,6 +16,9 @@ Desktop.ini
 # Local env
 .env
 
+# Local scratch
+deps*.txt
+
 HELP.md
 .gradle
 build/

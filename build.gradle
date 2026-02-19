@@ -32,3 +32,5 @@ subprojects {
         useJUnitPlatform()
     }
 }
+
+// NOTE: CUBRID JDBC driver is wired per runnable service module.

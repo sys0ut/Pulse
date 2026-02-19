@@ -10,6 +10,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
+    runtimeOnly files(rootProject.file('JDBC-11.3-latest-cubrid.jar'))
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
