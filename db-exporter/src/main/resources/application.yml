@@ -1,0 +1,19 @@
+server:
+  port: 8085
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+cubrid:
+  db-list: ${CUBRID_DB_LIST:}
+  scrape-interval: ${CUBRID_SCRAPE_INTERVAL:14s}
+  command-timeout: ${CUBRID_COMMAND_TIMEOUT:5s}
+  bin: ${CUBRID_BIN:cubrid}
+
