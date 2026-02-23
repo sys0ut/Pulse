@@ -1,32 +1,60 @@
-# Pulse Observability Mini Platform (v1)
+# Pulse (v1) - 실행 방법
 
-Spring Boot + CUBRID 11.4 기반의 **로그/메트릭 수집·조회** 미니 플랫폼(v1) 프로젝트 골격입니다.
+이 레포의 데모 목표는:
+- CUBRID 서버(호스트 또는 컨테이너 내부)에서 **`db-exporter`**를 실행해서 `/actuator/prometheus`로 메트릭을 노출
+- WSL에서 **Prometheus + Grafana**를 Docker로 실행해서 exporter를 scrape 하고 웹 UI로 확인
 
-## Modules
+---
 
-- `common`: 공통 DTO/Validation/ID/태그 정규화 유틸
-- `storage`: CUBRID JDBC 기반 DAO/SQL(배치 insert, 조회, 롤업 upsert)
-- `log-ingest`: 로그 수집(write-only) 서비스
-- `metric-ingest`: 메트릭 수집(write-only) + 1m 롤업 업데이트 서비스
-- `query-api`: 로그 조회(read-only), 메트릭 조회(read-only, 기본 rollup_1m) 서비스
-- `partition-manager`: 파티션 생성/삭제(DDL) 전용 서비스
+## 1) CUBRID 서버에서 `db-exporter` 실행
 
-## Quick Start (dev)
+### 전제(중요)
+`db-exporter`는 내부에서 아래 커맨드를 실행합니다. **Exporter를 실행하는 위치에서 커맨드가 돌아야 합니다.**
+- `cubrid broker status -b`
+- `cubrid heartbeat status`
+- `cubrid tranlist <db>`
+- `cubrid spacedb -sp <db>`
 
-1) (권장) Docker로 CUBRID/Prometheus/Grafana를 올립니다.
+### 환경변수
+- `CUBRID_DB_LIST` (필수): 예) `demodb,tt`
+- `CUBRID_BIN` (옵션): 기본 `cubrid` (PATH에 없으면 절대경로)
 
-- `docker/docker-compose.yml` 참고
-
-2) 서비스 실행(예: query-api)
+### 실행
+현재 빌드 산출물은 **Java 21 런타임**으로 실행하는 것을 기준으로 합니다.
 
 ```bash
-./gradlew :query-api:bootRun
+export CUBRID_DB_LIST="demodb"
+export CUBRID_BIN="cubrid"
+
+/opt/jdk-21*/bin/java -jar db-exporter-0.1.0-SNAPSHOT.jar
 ```
 
-## Notes
+### 확인
+```bash
+curl -s http://localhost:8085/actuator/prometheus | grep pulse_cubrid_scrape_success
+curl -s http://localhost:8085/actuator/prometheus | grep pulse_cubrid_db_scrape_success
+```
 
-- CUBRID JDBC 드라이버는 환경에 따라 Maven 좌표가 다를 수 있어, 기본은 “드라이버는 런타임에 제공”하는 형태로 구성했습니다.
-- 운영(v1) 기준:
-  - 로그 `message`는 **8KB까지만 메인 테이블 저장**, 초과분은 `log_payload`로 분리 저장
-  - 메트릭은 **`metric_rollup_1m`(1분 롤업)**을 Grafana 기본 조회 경로로 사용
+---
+
+## 2) WSL에서 Prometheus + Grafana 실행(Docker)
+
+### 사전 확인
+WSL에서 exporter 접근이 되어야 합니다.
+
+```bash
+curl -s http://<EXPORTER_HOST>:8085/actuator/prometheus | head
+```
+
+### 실행
+`ops/monitoring/prometheus/prometheus.yml`의 `<EXPORTER_HOST>`만 실제 주소로 변경한 뒤 실행합니다.
+
+```bash
+cd ops/monitoring
+docker compose up -d
+```
+
+### 접속/확인
+- Prometheus: `http://localhost:9090` → Status → Targets → `pulse-cubrid`가 UP
+- Grafana: `http://localhost:3000` (admin/admin)
 

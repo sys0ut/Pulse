@@ -1,0 +1,9 @@
+global:
+  scrape_interval: 14s
+
+scrape_configs:
+  - job_name: "pulse-cubrid"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["<EXPORTER_HOST>:8085"]
+
