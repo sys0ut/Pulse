@@ -1,0 +1,216 @@
+{
+  "uid": "pulse-cubrid-7p",
+  "title": "Pulse - CUBRID (7 panels)",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "10s",
+  "tags": ["pulse", "cubrid"],
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "broker",
+        "type": "query",
+        "datasource": "Prometheus",
+        "refresh": 2,
+        "query": {
+          "query": "label_values(pulse_cubrid_broker_tps, broker)",
+          "refId": "var-broker"
+        },
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": false, "text": "All", "value": ".*" }
+      },
+      {
+        "name": "db",
+        "type": "query",
+        "datasource": "Prometheus",
+        "refresh": 2,
+        "query": {
+          "query": "label_values(pulse_cubrid_tran_sessions, db)",
+          "refId": "var-db"
+        },
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": false, "text": "All", "value": ".*" }
+      },
+      {
+        "name": "node",
+        "type": "query",
+        "datasource": "Prometheus",
+        "refresh": 2,
+        "query": {
+          "query": "label_values(pulse_cubrid_ha_role, node)",
+          "refId": "var-node"
+        },
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": { "selected": false, "text": "All", "value": ".*" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Connections (sessions)",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pulse_cubrid_tran_sessions{db=~\"$db\"}",
+          "legendFormat": "{{db}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "TPS / QPS (broker status)",
+      "gridPos": { "x": 8, "y": 0, "w": 16, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pulse_cubrid_broker_tps{broker=~\"$broker\"}",
+          "legendFormat": "TPS {{broker}}:{{port}}"
+        },
+        {
+          "refId": "B",
+          "expr": "pulse_cubrid_broker_qps{broker=~\"$broker\"}",
+          "legendFormat": "QPS {{broker}}:{{port}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Locks / waits (tranlist)",
+      "gridPos": { "x": 0, "y": 8, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pulse_cubrid_tran_lock_wait{db=~\"$db\"}",
+          "legendFormat": "lock_wait {{db}}"
+        },
+        {
+          "refId": "B",
+          "expr": "pulse_cubrid_tran_active{db=~\"$db\"}",
+          "legendFormat": "active {{db}}"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "Errors (broker status)",
+      "gridPos": { "x": 8, "y": 8, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pulse_cubrid_broker_err_query_count{broker=~\"$broker\"}",
+          "legendFormat": "err {{broker}}:{{port}}"
+        },
+        {
+          "refId": "B",
+          "expr": "pulse_cubrid_broker_unique_err_query_count{broker=~\"$broker\"}",
+          "legendFormat": "unique_err {{broker}}:{{port}}"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Longest query / tran (seconds)",
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pulse_cubrid_tran_longest_query_seconds{db=~\"$db\"}",
+          "legendFormat": "query {{db}}"
+        },
+        {
+          "refId": "B",
+          "expr": "pulse_cubrid_tran_longest_tran_seconds{db=~\"$db\"}",
+          "legendFormat": "tran {{db}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Space usage (PERMANENT) %",
+      "gridPos": { "x": 0, "y": 16, "w": 16, "h": 8 },
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "100 * pulse_cubrid_space_used_bytes{db=~\"$db\",type=\"PERMANENT\"} / pulse_cubrid_space_total_bytes{db=~\"$db\",type=\"PERMANENT\"}",
+          "legendFormat": "{{db}}"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "HA role (1=master, 0=slave)",
+      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 8 },
+      "datasource": "Prometheus",
+      "options": {
+        "orientation": "horizontal",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "SLAVE" },
+                "1": { "text": "MASTER" }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "green", "value": 1 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "pulse_cubrid_ha_role{node=~\"$node\"}",
+          "legendFormat": "{{node}}"
+        }
+      ]
+    }
+  ]
+}
+
