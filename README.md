@@ -56,17 +56,7 @@ WSL에서 exporter 접근이 되어야 합니다.
 curl -s http://<EXPORTER_HOST>:8085/actuator/prometheus | head
 ```
 
-### 케이스 A) 이미 Prometheus + Grafana가 떠 있는 경우(추천)
-- **Prometheus**: scrape target에 exporter를 추가합니다.
-  - 예) `/etc/prometheus/prometheus.yml`
-    - `targets: ["172.31.201.42:8085"]`
-- **Grafana**:
-  - Prometheus 데이터소스를 추가합니다. (URL 예: `http://prometheus:9090`)
-  - 대시보드 Import(JSON): `ops/monitoring/grafana/dashboards/pulse-cubrid-7panels.json`
-  - Import 후 패널이 `No data`면, Grafana 데이터소스 **이름이 `Prometheus`인지** 확인하세요.
-    - (대시보드/변수가 기본적으로 `Prometheus` 이름을 사용합니다)
-
-### 케이스 B) `ops/monitoring` 스택으로 새로 띄우는 경우
+### 실행
 `ops/monitoring/prometheus/prometheus.yml`의 `<EXPORTER_HOST>`만 실제 주소로 변경한 뒤 실행합니다.
 
 ```bash
