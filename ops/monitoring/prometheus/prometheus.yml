@@ -5,5 +5,6 @@ scrape_configs:
   - job_name: "pulse-cubrid"
     metrics_path: "/actuator/prometheus"
     static_configs:
+      # Exporter host (replace <EXPORTER_HOST> with your db-exporter host/IP)
       - targets: ["<EXPORTER_HOST>:8085"]
 

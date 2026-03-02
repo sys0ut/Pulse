@@ -40,6 +40,15 @@ curl -s http://localhost:8085/actuator/prometheus | grep pulse_cubrid_db_scrape_
 
 ## 2) WSL에서 Prometheus + Grafana 실행(Docker)
 
+### (가장 빠른 실행)
+WSL에서 아래만 하면 Prometheus + Grafana가 뜹니다.
+
+```bash
+cd ops/monitoring
+docker compose up -d
+docker compose ps
+```
+
 ### 사전 확인
 WSL에서 exporter 접근이 되어야 합니다.
 
