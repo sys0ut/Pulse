@@ -59,7 +59,7 @@ curl -s http://<EXPORTER_HOST>:8085/actuator/prometheus | head
 ### 케이스 A) 이미 Prometheus + Grafana가 떠 있는 경우(추천)
 - **Prometheus**: scrape target에 exporter를 추가합니다.
   - 예) `/etc/prometheus/prometheus.yml`
-    - `targets: ["***.*.***.**:8085"]`
+    - `targets: ["***.**.***.**:8085"]`
 - **Grafana**:
   - Prometheus 데이터소스를 추가합니다. (URL 예: `http://prometheus:9090`)
   - 대시보드 Import(JSON): `ops/monitoring/grafana/dashboards/pulse-cubrid-7panels.json`
