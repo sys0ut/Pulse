@@ -43,6 +43,46 @@ public class ProcessRunner {
         !finished);
   }
 
+  /**
+   * Starts the process, captures stdout/stderr for a fixed duration, then forcibly terminates it and
+   * returns what was captured.
+   *
+   * <p>Useful for commands that stream repeated snapshots (e.g. {@code cubrid broker status -f -s 1})
+   * where we want to ignore the first snapshot and use a later one.
+   */
+  public CommandResult runForCapture(List<String> command, Duration captureDuration)
+      throws IOException, InterruptedException {
+    Objects.requireNonNull(command);
+    Objects.requireNonNull(captureDuration);
+
+    Process process = new ProcessBuilder(command).redirectErrorStream(false).start();
+
+    ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+    ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+
+    Thread outThread = streamTo(process.getInputStream(), stdout);
+    Thread errThread = streamTo(process.getErrorStream(), stderr);
+
+    Thread.sleep(Math.max(0, captureDuration.toMillis()));
+
+    // Try graceful termination first to allow buffered stdout to flush.
+    process.destroy();
+    boolean exited = process.waitFor(1500, TimeUnit.MILLISECONDS);
+    if (!exited) {
+      process.destroyForcibly();
+      process.waitFor(1, TimeUnit.SECONDS);
+    }
+
+    outThread.join(1000);
+    errThread.join(1000);
+
+    return new CommandResult(
+        exited ? process.exitValue() : -1,
+        stdout.toString(StandardCharsets.UTF_8),
+        stderr.toString(StandardCharsets.UTF_8),
+        !exited);
+  }
+
   private static Thread streamTo(InputStream in, ByteArrayOutputStream out) {
     Thread t =
         Thread.ofVirtual()

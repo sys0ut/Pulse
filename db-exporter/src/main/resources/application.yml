@@ -16,4 +16,8 @@ cubrid:
   scrape-interval: ${CUBRID_SCRAPE_INTERVAL:14s}
   command-timeout: ${CUBRID_COMMAND_TIMEOUT:5s}
   bin: ${CUBRID_BIN:cubrid}
+  broker-fs1-enabled: ${CUBRID_BROKER_FS1_ENABLED:false}
+  broker-fs1-scrape-interval: ${CUBRID_BROKER_FS1_SCRAPE_INTERVAL:1s}
+  broker-fs1-capture-duration: ${CUBRID_BROKER_FS1_CAPTURE_DURATION:2s}
+  broker-fs1-sample-seconds: ${CUBRID_BROKER_FS1_SAMPLE_SECONDS:1}
 

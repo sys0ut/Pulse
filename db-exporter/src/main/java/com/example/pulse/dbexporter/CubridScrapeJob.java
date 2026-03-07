@@ -3,6 +3,7 @@ package com.example.pulse.dbexporter;
 import com.example.pulse.dbexporter.metrics.GaugeStore;
 import com.example.pulse.dbexporter.scrape.CommandResult;
 import com.example.pulse.dbexporter.scrape.ProcessRunner;
+import com.example.pulse.dbexporter.scrape.parse.BrokerStatusFs1Parser;
 import com.example.pulse.dbexporter.scrape.parse.BrokerStatusParser;
 import com.example.pulse.dbexporter.scrape.parse.HeartbeatParser;
 import com.example.pulse.dbexporter.scrape.parse.SpaceDbParser;
@@ -15,11 +16,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CubridScrapeJob {
+
+  private static final Logger log = LoggerFactory.getLogger(CubridScrapeJob.class);
 
   private static final String METRIC_SCRAPE_SUCCESS = "pulse_cubrid_scrape_success";
   private static final String METRIC_SCRAPE_DURATION_SECONDS = "pulse_cubrid_scrape_duration_seconds";
@@ -56,6 +62,58 @@ public class CubridScrapeJob {
       }
       scrapeTranlist(db);
       scrapeSpaceDb(db);
+    }
+  }
+
+  @Scheduled(fixedDelayString = "${cubrid.broker-fs1-scrape-interval:1s}")
+  public void scrapeBrokerStatusFs1() {
+    if (!props.brokerFs1Enabled()) {
+      return;
+    }
+
+    long startNanos = System.nanoTime();
+    boolean ok = false;
+    try {
+      // `-f -s 1` prints an initial snapshot (often cumulative since broker start),
+      // then after ~1s starts printing 1s-rate snapshots. We capture long enough to include
+      // at least 2 snapshots and parse the last one.
+      CommandResult result =
+          runner.runForCapture(
+              commandForFs1Capture(
+                  "broker",
+                  "status",
+                  "-b",
+                  "-f",
+                  "-s",
+                  String.valueOf(props.brokerFs1SampleSeconds())),
+              props.brokerFs1CaptureDuration());
+
+      var snapshot = BrokerStatusFs1Parser.parse(result.stdout());
+      ok = !snapshot.brokers().isEmpty();
+      if (ok) {
+        for (var row : snapshot.brokers()) {
+          Tags tags = Tags.of("broker", row.broker(), "port", String.valueOf(row.port()));
+          gauges.set("pulse_cubrid_broker_tps_1s", tags, row.tps());
+          gauges.set("pulse_cubrid_broker_qps_1s", tags, row.qps());
+        }
+      } else {
+        String out = result.stdout();
+        String err = result.stderr();
+        String outSnippet = snippet(out);
+        String errSnippet = snippet(err);
+        log.warn(
+            "broker_fs1 parsed empty snapshot (stdoutBytes={}, stderrBytes={}, timedOut={}, exitCode={}, stdoutSnippet='{}', stderrSnippet='{}')",
+            out == null ? 0 : out.length(),
+            err == null ? 0 : err.length(),
+            result.timedOut(),
+            result.exitCode(),
+            outSnippet,
+            errSnippet);
+      }
+    } catch (Exception ignored) {
+      ok = false;
+    } finally {
+      finishSource("broker_fs1", ok, startNanos);
     }
   }
 
@@ -228,11 +286,54 @@ public class CubridScrapeJob {
     tags.add(name);
     tags.add("state");
     tags.add(state);
-    if (db != null && !db.isBlank()) {
-      tags.add("db");
-      tags.add(db);
-    }
+    // Always include the same tag keys for a given meter name.
+    // Prometheus/Micrometer requires tag key sets to be consistent across registrations.
+    tags.add("db");
+    tags.add(db == null ? "" : db);
     return Tags.of(tags.toArray(new String[0]));
+  }
+
+  private static String snippet(String s) {
+    if (s == null) {
+      return "";
+    }
+    String t = s.replace("\r", "").replace("\n", "\\n").trim();
+    if (t.length() <= 200) {
+      return t;
+    }
+    return t.substring(0, 200) + "...";
+  }
+
+  /**
+   * `cubrid broker status -b -f -s 1` uses a terminal UI internally on some environments.
+   * When executed without a TTY (like from ProcessBuilder with piped stdout), it may fail with
+   * "Cannot set terminal ... fail to initialize tinfo library".
+   *
+   * <p>We wrap the command with `script -q -c ... /dev/null` to provide a pseudo-tty.
+   * If `script` is not available, it will fall back to the plain command.
+   */
+  private List<String> commandForFs1Capture(String... args) {
+    List<String> base = command(args);
+    String cmdString =
+        base.stream().map(CubridScrapeJob::shellQuote).collect(Collectors.joining(" "));
+
+    // util-linux `script` provides a pseudo-tty and captures the output.
+    // script -q -c "<cmd>" /dev/null
+    List<String> wrapped = new ArrayList<>();
+    wrapped.add("script");
+    wrapped.add("-q");
+    wrapped.add("-c");
+    wrapped.add(cmdString);
+    wrapped.add("/dev/null");
+    return wrapped;
+  }
+
+  private static String shellQuote(String s) {
+    if (s == null) {
+      return "''";
+    }
+    // POSIX-safe single-quote escaping: ' -> '\''
+    return "'" + s.replace("'", "'\"'\"'") + "'";
   }
 
   private void finishSource(String source, boolean ok, long startNanos) {
