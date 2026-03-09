@@ -13,14 +13,12 @@
   "templating": {
     "list": [
       {
-        "name": "mode",
+        "name": "broker_mode",
         "type": "custom",
-        "label": "Mode",
-        "options": [
-          { "selected": true, "text": "realtime", "value": "_1s" },
-          { "selected": false, "text": "cumulative", "value": "" }
-        ],
-        "current": { "selected": true, "text": "realtime", "value": "_1s" }
+        "label": "Broker mode",
+        "query": "realtime : _1s$, cumulative : $",
+        "options": [],
+        "current": { "text": "realtime", "value": "_1s$" }
       },
       {
         "name": "broker",
@@ -28,7 +26,7 @@
         "datasource": "Prometheus",
         "refresh": 2,
         "query": {
-          "query": "label_values(pulse_cubrid_broker_tps, broker)",
+          "query": "label_values({__name__=~\"pulse_cubrid_broker_tps(_1s)?\"}, broker)",
           "refId": "var-broker"
         },
         "multi": true,
@@ -90,12 +88,12 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "pulse_cubrid_broker_tps${mode}{broker=~\"$broker\"}",
+          "expr": "{__name__=~\"pulse_cubrid_broker_tps${broker_mode:raw}\",broker=~\"$broker\"}",
           "legendFormat": "TPS {{broker}}:{{port}}"
         },
         {
           "refId": "B",
-          "expr": "pulse_cubrid_broker_qps${mode}{broker=~\"$broker\"}",
+          "expr": "{__name__=~\"pulse_cubrid_broker_qps${broker_mode:raw}\",broker=~\"$broker\"}",
           "legendFormat": "QPS {{broker}}:{{port}}"
         }
       ]
