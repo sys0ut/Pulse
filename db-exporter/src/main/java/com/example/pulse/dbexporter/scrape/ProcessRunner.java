@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -28,8 +29,7 @@ public class ProcessRunner {
 
     boolean finished = process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS);
     if (!finished) {
-      process.destroyForcibly();
-      process.waitFor(1, TimeUnit.SECONDS);
+      terminateProcessTree(process, 500, 1000);
     }
 
     outThread.join(1000);
@@ -65,13 +65,10 @@ public class ProcessRunner {
 
     Thread.sleep(Math.max(0, captureDuration.toMillis()));
 
-    // Try graceful termination first to allow buffered stdout to flush.
-    process.destroy();
-    boolean exited = process.waitFor(1500, TimeUnit.MILLISECONDS);
-    if (!exited) {
-      process.destroyForcibly();
-      process.waitFor(1, TimeUnit.SECONDS);
-    }
+    // IMPORTANT:
+    // When the command is wrapped (e.g. `script -q -c ... /dev/null`), destroying only the parent
+    // can leave the actual child command running as an orphan. Terminate the whole process tree.
+    boolean exited = terminateProcessTree(process, 1500, 1000);
 
     outThread.join(1000);
     errThread.join(1000);
@@ -81,6 +78,42 @@ public class ProcessRunner {
         stdout.toString(StandardCharsets.UTF_8),
         stderr.toString(StandardCharsets.UTF_8),
         !exited);
+  }
+
+  private static boolean terminateProcessTree(Process process, long gracefulWaitMs, long forceWaitMs)
+      throws InterruptedException {
+    ProcessHandle root = process.toHandle();
+
+    // Terminate descendants first, then the root, to avoid leaving orphans.
+    List<ProcessHandle> toKill = new ArrayList<>();
+    root.descendants().forEach(toKill::add);
+    toKill.add(root);
+
+    for (ProcessHandle ph : toKill) {
+      try {
+        ph.destroy();
+      } catch (Exception ignored) {
+        // best effort
+      }
+    }
+
+    boolean exited = process.waitFor(gracefulWaitMs, TimeUnit.MILLISECONDS);
+    if (exited) {
+      return true;
+    }
+
+    for (ProcessHandle ph : toKill) {
+      try {
+        if (ph.isAlive()) {
+          ph.destroyForcibly();
+        }
+      } catch (Exception ignored) {
+        // best effort
+      }
+    }
+
+    process.waitFor(forceWaitMs, TimeUnit.MILLISECONDS);
+    return !process.isAlive();
   }
 
   private static Thread streamTo(InputStream in, ByteArrayOutputStream out) {
