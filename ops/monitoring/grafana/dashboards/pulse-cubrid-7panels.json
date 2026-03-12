@@ -15,10 +15,10 @@
       {
         "name": "broker_mode",
         "type": "custom",
-        "label": "Broker mode",
-        "query": "realtime : _1s$, cumulative : $",
+        "label": "BROKER MODE",
+        "query": "REALTIME : _1s$, CUMULATIVE : $",
         "options": [],
-        "current": { "text": "realtime", "value": "_1s$" }
+        "current": { "text": "REALTIME", "value": "_1s$" }
       },
       {
         "name": "broker",
@@ -29,10 +29,11 @@
           "query": "label_values({__name__=~\"pulse_cubrid_broker_tps(_1s)?\"}, broker)",
           "refId": "var-broker"
         },
+        "label": "BROKER",
         "multi": true,
         "includeAll": true,
         "allValue": ".*",
-        "current": { "selected": false, "text": "All", "value": ".*" }
+        "current": { "selected": false, "text": "ALL", "value": ".*" }
       },
       {
         "name": "db",
@@ -43,10 +44,11 @@
           "query": "label_values(pulse_cubrid_tran_sessions, db)",
           "refId": "var-db"
         },
+        "label": "DB",
         "multi": true,
         "includeAll": true,
         "allValue": ".*",
-        "current": { "selected": false, "text": "All", "value": ".*" }
+        "current": { "selected": false, "text": "ALL", "value": ".*" }
       },
       {
         "name": "node",
@@ -57,10 +59,11 @@
           "query": "label_values(pulse_cubrid_ha_role, node)",
           "refId": "var-node"
         },
+        "label": "NODE",
         "multi": true,
         "includeAll": true,
         "allValue": ".*",
-        "current": { "selected": false, "text": "All", "value": ".*" }
+        "current": { "selected": false, "text": "ALL", "value": ".*" }
       }
     ]
   },
