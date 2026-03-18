@@ -110,8 +110,9 @@ public class CubridScrapeJob {
             outSnippet,
             errSnippet);
       }
-    } catch (Exception ignored) {
+    } catch (Exception e) {
       ok = false;
+      log.warn("scrape source=broker_fs1 failed", e);
     } finally {
       finishSource("broker_fs1", ok, startNanos);
     }
@@ -154,8 +155,9 @@ public class CubridScrapeJob {
               row.longQueryThresholdSeconds());
         }
       }
-    } catch (Exception ignored) {
+    } catch (Exception e) {
       ok = false;
+      log.warn("scrape source=broker failed", e);
     } finally {
       finishSource("broker", ok, startNanos);
     }
@@ -177,9 +179,10 @@ public class CubridScrapeJob {
         gauges.set("pulse_cubrid_tran_longest_query_seconds", tags, snap.longestQuerySeconds());
         gauges.set("pulse_cubrid_tran_longest_tran_seconds", tags, snap.longestTranSeconds());
       }
-    } catch (Exception ignored) {
+    } catch (Exception e) {
       ok = false;
       gauges.set(METRIC_DB_SCRAPE_SUCCESS, Tags.of("source", "tranlist", "db", db), 0);
+      log.warn("scrape source=tranlist db={} failed", db, e);
     } finally {
       finishSource("tranlist", ok, startNanos);
     }
@@ -209,9 +212,10 @@ public class CubridScrapeJob {
           gauges.set("pulse_cubrid_file_count", tags, row.fileCount());
         }
       }
-    } catch (Exception ignored) {
+    } catch (Exception e) {
       ok = false;
       gauges.set(METRIC_DB_SCRAPE_SUCCESS, Tags.of("source", "spacedb", "db", db), 0);
+      log.warn("scrape source=spacedb db={} failed", db, e);
     } finally {
       finishSource("spacedb", ok, startNanos);
     }
@@ -241,8 +245,9 @@ public class CubridScrapeJob {
           updateProcessState(proc.name(), proc.db(), proc.state());
         }
       }
-    } catch (Exception ignored) {
+    } catch (Exception e) {
       ok = false;
+      log.warn("scrape source=heartbeat failed", e);
     } finally {
       finishSource("heartbeat", ok, startNanos);
     }
