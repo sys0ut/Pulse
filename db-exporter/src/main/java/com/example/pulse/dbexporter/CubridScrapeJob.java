@@ -124,7 +124,9 @@ public class CubridScrapeJob {
     try {
       CommandResult result = runner.run(command("broker", "status", "-b"), props.commandTimeout());
       ok = result.success();
-      if (ok) {
+      if (!ok) {
+        logScrapeCommandFailure("broker", null, result);
+      } else {
         var snapshot = BrokerStatusParser.parse(result.stdout());
         for (var row : snapshot.brokers()) {
           Tags tags = Tags.of("broker", row.broker(), "port", String.valueOf(row.port()));
@@ -170,7 +172,9 @@ public class CubridScrapeJob {
       CommandResult result = runner.run(command("tranlist", db), props.commandTimeout());
       ok = result.success();
       gauges.set(METRIC_DB_SCRAPE_SUCCESS, Tags.of("source", "tranlist", "db", db), ok ? 1 : 0);
-      if (ok) {
+      if (!ok) {
+        logScrapeCommandFailure("tranlist", db, result);
+      } else {
         var snap = TranlistParser.parse(result.stdout());
         Tags tags = Tags.of("db", db);
         gauges.set("pulse_cubrid_tran_sessions", tags, snap.sessions());
@@ -195,7 +199,9 @@ public class CubridScrapeJob {
       CommandResult result = runner.run(command("spacedb", "-sp", db), props.commandTimeout());
       ok = result.success();
       gauges.set(METRIC_DB_SCRAPE_SUCCESS, Tags.of("source", "spacedb", "db", db), ok ? 1 : 0);
-      if (ok) {
+      if (!ok) {
+        logScrapeCommandFailure("spacedb", db, result);
+      } else {
         var snap = SpaceDbParser.parse(result.stdout());
         for (var row : snap.summaries()) {
           Tags tags = Tags.of("db", db, "type", row.type(), "purpose", row.purpose());
@@ -227,7 +233,9 @@ public class CubridScrapeJob {
     try {
       CommandResult result = runner.run(command("heartbeat", "status"), props.commandTimeout());
       ok = result.success();
-      if (ok) {
+      if (!ok) {
+        logScrapeCommandFailure("heartbeat", null, result);
+      } else {
         var snap = HeartbeatParser.parse(result.stdout());
         // peer nodes (excluding current)
         long peers = Math.max(0, snap.nodes().size() - 1);
@@ -307,6 +315,29 @@ public class CubridScrapeJob {
       return t;
     }
     return t.substring(0, 200) + "...";
+  }
+
+  private void logScrapeCommandFailure(String source, String db, CommandResult result) {
+    String err = result.stderr();
+    String out = result.stdout();
+    if (db == null || db.isBlank()) {
+      log.warn(
+          "scrape source={} command failed (exitCode={}, timedOut={}, stderrSnippet='{}', stdoutSnippet='{}')",
+          source,
+          result.exitCode(),
+          result.timedOut(),
+          snippet(err),
+          snippet(out));
+      return;
+    }
+    log.warn(
+        "scrape source={} db={} command failed (exitCode={}, timedOut={}, stderrSnippet='{}', stdoutSnippet='{}')",
+        source,
+        db,
+        result.exitCode(),
+        result.timedOut(),
+        snippet(err),
+        snippet(out));
   }
 
   /**
