@@ -1,8 +1,8 @@
 package com.example.pulse.partitionmanager.service;
 
+import com.example.pulse.partitionmanager.config.PartitionMaintenanceProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -12,9 +12,10 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 /**
- * v1 skeleton:
- * - 파티션 생성/삭제는 운영 환경의 CUBRID 파티션 DDL 문법/정책에 맞게 SQL을 세팅해 실행한다.
- * - 기본값은 disabled(안전).
+ * Skeleton scheduler: runs only when {@code pulse.partition.enabled=true} and SQL templates are set.
+ * <p>
+ * Configure CUBRID-compatible DDL in {@code application.yml} (or env). Replace {@code {day}} with
+ * the target partition key ({@code yyyyMMdd}, UTC). Validate in staging before production.
  */
 @Component
 public class PartitionMaintenanceJob {
@@ -22,16 +23,16 @@ public class PartitionMaintenanceJob {
     private static final DateTimeFormatter DAY = DateTimeFormatter.BASIC_ISO_DATE; // yyyyMMdd
 
     private final JdbcTemplate jdbc;
-    private final boolean enabled;
+    private final PartitionMaintenanceProperties props;
 
-    public PartitionMaintenanceJob(JdbcTemplate jdbc, @Value("${pulse.partition.enabled:false}") boolean enabled) {
+    public PartitionMaintenanceJob(JdbcTemplate jdbc, PartitionMaintenanceProperties props) {
         this.jdbc = jdbc;
-        this.enabled = enabled;
+        this.props = props;
     }
 
     @Scheduled(cron = "${pulse.partition.cron:0 5 0 * * *}")
     public void runDaily() {
-        if (!enabled) {
+        if (!props.enabled()) {
             log.info("partition-maintenance disabled (pulse.partition.enabled=false)");
             return;
         }
@@ -41,21 +42,19 @@ public class PartitionMaintenanceJob {
         LocalDate create2 = today.plusDays(2);
         LocalDate drop = today.minusDays(8);
 
-        // NOTE: 아래 SQL은 '예시'입니다. CUBRID 11.4 파티션 DDL 문법에 맞게 바꾸세요.
-        // 운영 반영 전, 반드시 staging에서 검증하세요.
-        exec("/* TODO */", "create-partition", create1);
-        exec("/* TODO */", "create-partition", create2);
-        exec("/* TODO */", "drop-partition", drop);
+        exec(props.createSqlTemplate(), "create-partition+1d", create1);
+        exec(props.createSqlTemplate(), "create-partition+2d", create2);
+        exec(props.dropSqlTemplate(), "drop-partition-8d", drop);
     }
 
-    private void exec(String sql, String action, LocalDate day) {
+    private void exec(String sqlTemplate, String action, LocalDate day) {
         String key = day.format(DAY);
         log.info("partition-maintenance action={} day={}", action, key);
-        if (sql == null || sql.isBlank() || sql.contains("TODO")) {
-            log.warn("partition-maintenance SQL not configured for action={} day={}", action, key);
+        if (sqlTemplate == null || sqlTemplate.isBlank()) {
+            log.warn("partition-maintenance SQL template not configured for action={} day={}", action, key);
             return;
         }
+        String sql = sqlTemplate.replace("{day}", key);
         jdbc.execute(sql);
     }
 }
-

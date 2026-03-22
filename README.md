@@ -80,3 +80,22 @@ docker compose up -d
   - `Dashboards`에서 **`Pulse - CUBRID (7 panels)`** 대시보드가 자동으로 보입니다.
   - 대시보드 상단 변수에서 `db/broker/node`를 선택한 뒤 Refresh 하세요.
 
+---
+
+## 3) 전체 Gradle 빌드 / JDBC JAR
+
+여러 모듈(`partition-manager`, `query-api`, `log-ingest`, `metric-ingest`)이 **루트의 `JDBC-11.3-latest-cubrid.jar`** 를 `runtimeOnly` 로 참조합니다.  
+레포 루트에 해당 파일이 있어야 `./gradlew build` 가 통과합니다. (없으면 CUBRID JDBC를 로컬 Maven에 올리거나 `build.gradle` 의 `files(...)` 경로를 환경에 맞게 바꾸세요.)
+
+```bash
+./gradlew build
+```
+
+---
+
+## 4) `partition-manager` (스켈레톤)
+
+- 기본값 `pulse.partition.enabled=false` 이며, **SQL 템플릿이 비어 있으면 DDL을 실행하지 않습니다.**
+- 실제 파티션 DDL은 `partition-manager/src/main/resources/application.yml` 의 `pulse.partition.create-sql-template` / `drop-sql-template` 에 넣고, `{day}` 를 `yyyyMMdd`(UTC) 치환으로 사용합니다.
+- 운영 반영 전 스테이징에서 DDL·스케줄을 반드시 검증하세요.
+

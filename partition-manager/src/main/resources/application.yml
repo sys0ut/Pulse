@@ -16,6 +16,15 @@ pulse:
   partition:
     enabled: false
     cron: "0 5 0 * * *"
+    # Skeleton only: leave empty until you add real CUBRID partition DDL.
+    # Use {day} as yyyyMMdd (UTC). create runs for D+1 and D+2; drop runs for D-8.
+    create-sql-template: ""
+    drop-sql-template: ""
+    # Example (do not use verbatim — adjust to your schema and CUBRID version):
+    # create-sql-template: |
+    #   ALTER TABLE my_table ADD PARTITION (PARTITION p_{day} VALUES LESS THAN (...));
+    # drop-sql-template: |
+    #   ALTER TABLE my_table DROP PARTITION p_{day};
 
 management:
   endpoints:

@@ -1,10 +1,13 @@
 .gradle/
 **/build/
 **/out/
+build/
 
 # IDE
 .idea/
 *.iml
+*.iws
+*.ipr
 
 # OS
 Thumbs.db
@@ -20,8 +23,7 @@ Desktop.ini
 deps*.txt
 
 HELP.md
-.gradle
-build/
+
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -37,15 +39,6 @@ build/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-out/
-!**/src/main/**/out/
-!**/src/test/**/out/
 
 ### NetBeans ###
 /nbproject/private/
