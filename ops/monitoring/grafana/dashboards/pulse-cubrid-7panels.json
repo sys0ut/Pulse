@@ -71,21 +71,21 @@
     {
       "id": 1,
       "type": "timeseries",
-      "title": "Connections (sessions)",
+      "title": "CONNECTIONS (SESSIONS)",
       "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 },
       "datasource": "Prometheus",
       "targets": [
         {
           "refId": "A",
           "expr": "pulse_cubrid_tran_sessions{db=~\"$db\"}",
-          "legendFormat": "{{db}}"
+          "legendFormat": "SESSIONS {{db}}"
         }
       ]
     },
     {
       "id": 2,
       "type": "timeseries",
-      "title": "TPS / QPS (broker status)",
+      "title": "TPS / QPS (BROKER STATUS)",
       "gridPos": { "x": 8, "y": 0, "w": 16, "h": 8 },
       "datasource": "Prometheus",
       "targets": [
@@ -104,64 +104,64 @@
     {
       "id": 3,
       "type": "timeseries",
-      "title": "Locks / waits (tranlist)",
+      "title": "LOCKS / WAITS (TRANLIST)",
       "gridPos": { "x": 0, "y": 8, "w": 8, "h": 8 },
       "datasource": "Prometheus",
       "targets": [
         {
           "refId": "A",
           "expr": "pulse_cubrid_tran_lock_wait{db=~\"$db\"}",
-          "legendFormat": "lock_wait {{db}}"
+          "legendFormat": "LOCK_WAIT {{db}}"
         },
         {
           "refId": "B",
           "expr": "pulse_cubrid_tran_active{db=~\"$db\"}",
-          "legendFormat": "active {{db}}"
+          "legendFormat": "ACTIVE {{db}}"
         }
       ]
     },
     {
       "id": 4,
       "type": "timeseries",
-      "title": "Errors (broker status)",
+      "title": "ERRORS (BROKER STATUS)",
       "gridPos": { "x": 8, "y": 8, "w": 8, "h": 8 },
       "datasource": "Prometheus",
       "targets": [
         {
           "refId": "A",
           "expr": "pulse_cubrid_broker_err_query_count{broker=~\"$broker\"}",
-          "legendFormat": "err {{broker}}:{{port}}"
+          "legendFormat": "ERR {{broker}}:{{port}}"
         },
         {
           "refId": "B",
           "expr": "pulse_cubrid_broker_unique_err_query_count{broker=~\"$broker\"}",
-          "legendFormat": "unique_err {{broker}}:{{port}}"
+          "legendFormat": "UNIQUE_ERR {{broker}}:{{port}}"
         }
       ]
     },
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Longest query / tran (seconds)",
+      "title": "LONGEST QUERY / TRAN (SECONDS)",
       "gridPos": { "x": 16, "y": 8, "w": 8, "h": 8 },
       "datasource": "Prometheus",
       "targets": [
         {
           "refId": "A",
           "expr": "pulse_cubrid_tran_longest_query_seconds{db=~\"$db\"}",
-          "legendFormat": "query {{db}}"
+          "legendFormat": "QUERY {{db}}"
         },
         {
           "refId": "B",
           "expr": "pulse_cubrid_tran_longest_tran_seconds{db=~\"$db\"}",
-          "legendFormat": "tran {{db}}"
+          "legendFormat": "TRAN {{db}}"
         }
       ]
     },
     {
       "id": 6,
       "type": "timeseries",
-      "title": "Space usage (PERMANENT) %",
+      "title": "SPACE USAGE (PERMANENT) %",
       "gridPos": { "x": 0, "y": 16, "w": 16, "h": 8 },
       "datasource": "Prometheus",
       "fieldConfig": {
@@ -176,14 +176,14 @@
         {
           "refId": "A",
           "expr": "100 * pulse_cubrid_space_used_bytes{db=~\"$db\",type=\"PERMANENT\"} / pulse_cubrid_space_total_bytes{db=~\"$db\",type=\"PERMANENT\"}",
-          "legendFormat": "{{db}}"
+          "legendFormat": "USED_PCT {{db}}"
         }
       ]
     },
     {
       "id": 7,
       "type": "stat",
-      "title": "HA role (1=master, 0=slave)",
+      "title": "HA ROLE (1=MASTER, 0=SLAVE)",
       "gridPos": { "x": 16, "y": 16, "w": 8, "h": 8 },
       "datasource": "Prometheus",
       "options": {
@@ -218,7 +218,7 @@
         {
           "refId": "A",
           "expr": "pulse_cubrid_ha_role{node=~\"$node\"}",
-          "legendFormat": "{{node}}"
+          "legendFormat": "ROLE {{node}}"
         }
       ]
     }
