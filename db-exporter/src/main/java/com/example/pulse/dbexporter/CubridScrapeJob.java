@@ -382,7 +382,14 @@ public class CubridScrapeJob {
     List<String> cmd = new ArrayList<>();
     cmd.add(props.bin());
     for (String a : args) {
-      cmd.add(a);
+      if (a == null) {
+        continue;
+      }
+      String t = a.trim();
+      if (t.isEmpty()) {
+        continue;
+      }
+      cmd.add(t);
     }
     return cmd;
   }
