@@ -6,11 +6,12 @@ import java.util.regex.Pattern;
 public final class TranlistParser {
   private TranlistParser() {}
 
-  // Example:
-  // 1(ACTIVE) DBA host 13049 csql 0.00 0.00 -1 *** empty ***
+  // Example (column order matches `cubrid tranlist` header: ... Program name, Query time, Tran time,
+  // Wait for lock holder, ...):
+  //    1(ACTIVE)                DBA     jowonjae_1          97632    applylogdb   0.00   0.00   -1     *** empty ***
   private static final Pattern ROW =
       Pattern.compile(
-          "^\\s*(\\d+)\\(([^)]+)\\)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+(?:\\.\\d+)?)\\s+(\\d+(?:\\.\\d+)?)\\s+(-?\\d+)\\s+.*$");
+          "^\\s*(\\d+)\\(([^)]+)\\)\\s+(\\S+)\\s+(\\S+)\\s+(\\d+)\\s+(\\S+)\\s+(\\d+(?:\\.\\d+)?)\\s+(\\d+(?:\\.\\d+)?)\\s+(-?\\d+)\\s+.*$");
 
   public static TranlistSnapshot parse(String stdout) {
     if (stdout == null || stdout.isBlank()) {
@@ -43,9 +44,9 @@ public final class TranlistParser {
         active++;
       }
 
-      double queryTime = parseDouble(m.group(8));
-      double tranTime = parseDouble(m.group(9));
-      int lockHolder = parseInt(m.group(10));
+      double queryTime = parseDouble(m.group(7));
+      double tranTime = parseDouble(m.group(8));
+      int lockHolder = parseInt(m.group(9));
       if (lockHolder != -1) {
         lockWait++;
       }
